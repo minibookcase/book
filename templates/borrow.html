@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>借閱圖書</title>
+    <script>
+        function handleBarcodeInput(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                document.getElementById('borrowForm').submit();
+            }
+        }
+    </script>
+<style>
+    #topBtn {
+        display: none; /* 隱藏按鈕 */
+        position: fixed; /* 固定位置 */
+        bottom: 20px; /* 距離底部 20px */
+        right: 30px; /* 距離右邊 30px */
+        z-index: 99; /* 確保按鈕在其他元素之上 */
+        font-size: 18px; /* 字體大小 */
+        border: none; /* 無邊框 */
+        outline: none; /* 無外框 */
+        background-color: #555; /* 背景色 */
+        color: white; /* 文字顏色 */
+        cursor: pointer; /* 游標變為指針 */
+        padding: 15px; /* 內邊距 */
+        border-radius: 4px; /* 圓角 */
+    }
+
+    #topBtn:hover {
+        background-color: #333; /* 懸停時的背景色 */
+    }
+</style>
+
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar">
+            <ul class="navbar-list">
+                <li><a href="{{ url_for('index') }}">所有圖書</a></li>
+                <li><a href="{{ url_for('borrow') }}">借閱圖書</a></li>
+                <li><a href="{{ url_for('return_book') }}">歸還圖書</a></li>
+                <li><a href="{{ url_for('search') }}">查詢圖書</a></li>
+                <li><a href="{{ url_for('borrowed_list') }}">借出清單</a></li>
+            </ul>
+        </nav>
+        <h1>借閱圖書</h1>
+        <form id="borrowForm" method="post" action="{{ url_for('borrow') }}">
+            <label for="borrower">借閱人名字：</label>
+            <input type="text" id="borrower" name="borrower" required>
+            <label for="isbn">ISBN：</label>
+            <input type="text" id="isbn" name="isbn" onkeypress="handleBarcodeInput(event)" required>
+            <button type="submit">借閱</button>
+        </form>
+        <table class="books-table">
+            <thead>
+                <tr>
+                    <th>ISBN</th>
+                    <th>封面</th>
+                    <th>書名</th>
+                    <th>作者</th>
+                    <th>出版社</th>
+                    <th>出版日期</th>
+                    <th>借閱狀態</th>
+                    <th>借閱人</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in books %}
+                <tr>
+                    <td>{{ book.ISBN }}</td>
+                    <td><img src="{{ url_for('static', filename=book['封面圖片路徑']) }}" alt="封面圖片" width="100"></td>
+                    <td>{{ book.書名 }}</td>
+                    <td>{{ book.作者 }}</td>
+                    <td>{{ book.出版社 }}</td>
+                    <td>{{ book.出版日期 }}</td>
+                    <td>{{ book.借閱狀態 }}</td>
+                    <td>{{ book.借閱人 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if success_message %}
+        <script>
+            alert("{{ success_message }}");
+            window.location.href = "{{ url_for('index') }}";
+        </script>
+        {% endif %}
+        {% if error_message %}
+        <script>
+            alert("{{ error_message }}");
+        </script>
+        {% endif %}
+    </div>
+    <button onclick="topFunction()" id="topBtn" title="回到頂端">回到頂端</button>
+
+    <script>
+        // 獲取按鈕
+        var mybutton = document.getElementById("topBtn");
+
+        // 當用戶向下滾動 20px 時顯示按鈕
+        window.onscroll = function() {scrollFunction()};
+
+        function scrollFunction() {
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                mybutton.style.display = "block";
+            } else {
+                mybutton.style.display = "none";
+            }
+        }
+
+        // 當用戶點擊按鈕時，滾動回到頂部
+        function topFunction() {
+            document.body.scrollTop = 0; // For Safari
+            document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+        }
+    </script>
+</body>
+</html>

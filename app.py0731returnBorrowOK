@@ -1,0 +1,64 @@
+from flask import Flask, render_template, request
+import pandas as pd
+
+app = Flask(__name__)
+
+# 定義讀取Excel文件的函數
+def read_books_from_excel():
+    df = pd.read_excel('books_info_output.xlsx', dtype={'ISBN': str})
+    books = df.to_dict(orient='records')
+    return books
+
+# 定義保存到Excel文件的函數
+def save_books_to_excel(books):
+    df = pd.DataFrame(books)
+    df.to_excel('books_info_output.xlsx', index=False)
+
+@app.route('/')
+def index():
+    books = read_books_from_excel()
+    return render_template('index.html', books=books)
+
+@app.route('/search')
+def search():
+    books = read_books_from_excel()
+    return render_template('search.html', books=books)
+
+@app.route('/borrow', methods=['GET', 'POST'])
+def borrow():
+    books = read_books_from_excel()
+    if request.method == 'POST':
+        selected_books = request.form.getlist('selected_books')
+        if not selected_books:
+            return render_template('search.html', books=books, success_message="未選擇任何書籍")
+
+        for book in books:
+            if book['ISBN'] in selected_books:
+                book['借閱狀態'] = '已借出'
+
+        # 保存更新的books到Excel文件中
+        save_books_to_excel(books)
+
+        return render_template('search.html', books=books, success_message="書籍借閱成功")
+
+    return render_template('search.html', books=books)
+
+@app.route('/return', methods=['GET', 'POST'])
+def return_book():
+    books = read_books_from_excel()
+    print("Books data from Excel:", books)  # 調試信息
+    if request.method == 'POST':
+        isbn = request.form.get('isbn')
+        print("Received ISBN:", isbn)  # 調試信息
+        for book in books:
+            print("Checking book ISBN:", book['ISBN'])  # 調試信息
+            if book['ISBN'] == isbn:
+                book['借閱狀態'] = '在架上'
+                save_books_to_excel(books)
+                success_message = "歸還成功"
+                return render_template('return.html', success_message=success_message)
+        return "未找到該ISBN的書籍"
+    return render_template('return.html')
+ 
+if __name__ == '__main__':
+    app.run(debug=True)

@@ -1,0 +1,86 @@
+from flask import Flask, render_template, request, redirect, url_for, flash
+import pandas as pd
+
+app = Flask(__name__)
+app.secret_key = 'your_secret_key'
+
+def read_books_from_excel(file_path):
+    df = pd.read_excel(file_path)
+    books = df.to_dict(orient='records')
+    # 添加封面圖片路徑
+    for idx, book in enumerate(books, start=2):
+        book['封面圖片路徑'] = f'temp_images/temp_{idx}.png'
+    return books
+
+# 全局變量 books_info
+books_info = read_books_from_excel('books_info_output.xlsx')
+
+@app.route('/')
+def index():
+    books = books_info
+    books = read_books_from_excel('books_info_output.xlsx')
+    return render_template('index.html', books=books)
+
+@app.route('/borrow', methods=['GET', 'POST'])
+def borrow():
+    books = read_books_from_excel('books_info_output.xlsx')
+    if request.method == 'POST':
+        selected_books = request.form.getlist('selected_books')
+        for book in books:
+            if book['ISBN'] in selected_books:
+                book['借閱狀態'] = '已借出'
+        save_books_to_excel(books, 'books_info_output.xlsx')
+        success_message = "借閱成功！"
+        return render_template('borrow.html', books=books, success_message=success_message)
+    return render_template('borrow.html', books=books)
+
+@app.route('/borrow_books_from_search', methods=['POST'])
+def borrow_books_from_search():
+    selected_books = request.form.getlist('selected_books')
+    books = read_books_from_excel('books_info_output.xlsx')
+    
+    for isbn in selected_books:
+        for book in books:
+            if book['ISBN'] == isbn:
+                book['借閱狀態'] = '已借出'
+    
+    save_books_to_excel(books, 'books_info_output.xlsx')
+    success_message = "借閱成功！"
+    
+    return render_template('search.html', books=books, success_message=success_message)
+
+def save_books_to_excel(books, file_path):
+    df = pd.DataFrame(books)
+    df.to_excel(file_path, index=False)
+
+@app.route('/return', methods=['POST'])
+def return_book():
+    isbn = request.form['isbn']
+    books = read_books_from_excel('books_info_output.xlsx')
+    for book in books:
+        if book['ISBN'] == isbn:
+            book['借閱狀態'] = '在架上'
+    save_books_to_excel(books, 'books_info_output.xlsx')
+    return redirect(url_for('index'))
+
+
+@app.route('/search', methods=['GET', 'POST'])
+def search():
+    books = read_books_from_excel('books_info_output.xlsx')
+    if request.method == 'POST':
+        isbn = request.form.get('isbn')
+        title = request.form.get('title')
+        author = request.form.get('author')
+
+        filtered_books = [book for book in books if
+                          (not isbn or isbn in book['ISBN']) and
+                          (not title or title in book['書名']) and
+                          (not author or author in book['作者'])]
+
+        return render_template('search.html', books=filtered_books, success_message=None)
+
+    return render_template('search.html', books=[], success_message=None)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)

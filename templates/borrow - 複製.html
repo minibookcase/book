@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>借閱圖書</title>
+    <script>
+        function submitFormOnEnter(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();  // 防止表單預設行為
+                document.getElementById('borrowForm').submit();
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar">
+            <ul class="navbar-list">
+                <li><a href="{{ url_for('index') }}">所有圖書</a></li>
+                <li><a href="{{ url_for('borrow') }}">借閱圖書</a></li>
+                <li><a href="{{ url_for('return_book') }}">歸還圖書</a></li>
+                <li><a href="{{ url_for('search') }}">查詢圖書</a></li>
+            </ul>
+        </nav>
+        <h1>借閱圖書</h1>
+        <form id="borrowForm" method="post" action="{{ url_for('borrow') }}">
+            <div class="input-group">
+                <label for="borrower">借閱人名字：</label>
+                <input type="text" id="borrower" name="borrower" required>
+            </div>
+            <div class="input-group">
+                <label for="isbn">ISBN：</label>
+                <input type="text" id="isbn" name="isbn" placeholder="輸入ISBN進行借閱" onkeypress="submitFormOnEnter(event)">
+            </div>
+            <button type="submit" class="floating-button">借閱書籍</button>
+            <table class="books-table">
+                <thead>
+                    <tr>
+                        <th>選擇</th>
+                        <th>ISBN</th>
+                        <th>封面</th>
+                        <th>書名</th>
+                        <th>作者</th>
+                        <th>出版社</th>
+                        <th>出版日期</th>
+                        <th>借閱狀態</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for book in books %}
+                    <tr>
+                        <td><input type="checkbox" name="selected_books" value="{{ book.ISBN }}"></td>
+                        <td>{{ book.ISBN }}</td>
+                        <td><img src="{{ url_for('static', filename=book['封面圖片路徑']) }}" alt="封面圖片" width="100"></td>
+                        <td>{{ book.書名 }}</td>
+                        <td>{{ book.作者 }}</td>
+                        <td>{{ book.出版社 }}</td>
+                        <td>{{ book.出版日期 }}</td>
+                        <td>{{ book.借閱狀態 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </form>
+        {% if success_message %}
+        <script>
+            alert("{{ success_message }}");
+            window.location.href = "{{ url_for('index') }}";
+        </script>
+        {% endif %}
+    </div>
+</body>
+</html>

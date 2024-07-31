@@ -1,0 +1,92 @@
+from flask import Flask, render_template, request, redirect, url_for
+import pandas as pd
+import os
+
+app = Flask(__name__)
+
+def read_books_from_excel(file_path):
+    if not os.path.exists(file_path):
+        print(f"File {file_path} does not exist.")
+        return []
+    df = pd.read_excel(file_path)
+    books = df.to_dict(orient='records')
+    print(f"Books read from {file_path}: {books[:5]}")  # 調試信息，顯示前5本書
+    return books
+
+def save_books_to_excel(books, file_path):
+    df = pd.DataFrame(books)
+    print(f"Saving books to {file_path}")
+    print(df.head())  # 調試信息，顯示保存前的DataFrame頭部
+    df.to_excel(file_path, index=False)
+    print(f"Books successfully saved to {file_path}")
+
+@app.route('/')
+def index():
+    books = read_books_from_excel('books_info_output.xlsx')
+    return render_template('index.html', books=books)
+
+@app.route('/borrow', methods=['GET', 'POST'])
+def borrow():
+    books = read_books_from_excel('books_info_output.xlsx')
+    if request.method == 'POST':
+        selected_books = request.form.getlist('selected_books')
+        for book in books:
+            if book['ISBN'] in selected_books:
+                book['借閱狀態'] = '已借出'
+        save_books_to_excel(books, 'books_info_output.xlsx')
+        success_message = "借閱成功！"
+        return render_template('borrow.html', books=books, success_message=success_message)
+    return render_template('borrow.html', books=books)
+
+@app.route('/return', methods=['GET', 'POST'])
+def return_book():
+    books = read_books_from_excel('books_info_output.xlsx')
+    if request.method == 'POST':
+        isbn = request.form.get('isbn')
+        print(f"Returning book with ISBN: {isbn}")  # 調試信息
+        book_found = False
+        for book in books:
+            print(f"Checking book: {book['ISBN']}")  # 新增調試信息
+            if str(book['ISBN']) == str(isbn):  # 確保 ISBN 比較時類型一致
+                book['借閱狀態'] = '在架上'
+                book_found = True
+                break
+        if book_found:
+            save_books_to_excel(books, 'books_info_output.xlsx')
+            success_message = "歸還成功！"
+            print(f"Book with ISBN: {isbn} returned successfully.")  # 調試信息
+        else:
+            success_message = "未找到該ISBN的書籍。"
+            print(f"Book with ISBN: {isbn} not found.")  # 調試信息
+        return render_template('return.html', success_message=success_message)
+    return render_template('return.html')
+
+
+@app.route('/search', methods=['GET', 'POST'])
+def search():
+    books = read_books_from_excel('books_info_output.xlsx')
+    filtered_books = books
+    if request.method == 'POST':
+        isbn = request.form.get('isbn')
+        title = request.form.get('title')
+        author = request.form.get('author')
+        if isbn or title or author:
+            filtered_books = [book for book in books if
+                              (not isbn or isbn in book['ISBN']) and
+                              (not title or title in book['書名']) and
+                              (not author or author in book['作者'])]
+    return render_template('search.html', books=filtered_books)
+
+@app.route('/borrow_books_from_search', methods=['POST'])
+def borrow_books_from_search():
+    books = read_books_from_excel('books_info_output.xlsx')
+    selected_books = request.form.getlist('selected_books')
+    for book in books:
+        if book['ISBN'] in selected_books:
+            book['借閱狀態'] = '已借出'
+    save_books_to_excel(books, 'books_info_output.xlsx')
+    success_message = "借閱成功！"
+    return render_template('search.html', books=books, success_message=success_message)
+
+if __name__ == '__main__':
+    app.run(debug=True)
