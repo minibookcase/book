@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>所有圖書</title>
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar">
+            <ul class="navbar-list">
+                <li><a href="{{ url_for('index') }}">所有圖書</a></li>
+                <li><a href="{{ url_for('borrow') }}">借閱圖書</a></li>
+                <li><a href="{{ url_for('return_book') }}">歸還圖書</a></li>
+                <li><a href="{{ url_for('search') }}">查詢圖書</a></li>
+                <li><a href="{{ url_for('borrowed_list') }}">借出清單</a></li>
+            </ul>
+        </nav>
+        <h1>所有圖書</h1>
+        <table class="books-table">
+            <thead>
+                <tr>
+                    <th>ISBN</th>
+                    <th>封面</th>
+                    <th>書名</th>
+                    <th>作者</th>
+                    <th>出版社</th>
+                    <th>出版日期</th>
+                    <th>借閱狀態</th>
+                    <th>借閱人</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in books %}
+                <tr>
+                    <td>{{ book.ISBN }}</td>
+                    <td><img src="{{ url_for('static', filename=book['封面圖片路徑']) }}" alt="封面圖片" width="100"></td>
+                    <td>{{ book.書名 }}</td>
+                    <td>{{ book.作者 }}</td>
+                    <td>{{ book.出版社 }}</td>
+                    <td>{{ book.出版日期 }}</td>
+                    <td>{{ book.借閱狀態 }}</td>
+                    <td>{{ book.借閱人 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+<button onclick="topFunction()" id="topBtn" title="回到頂端">回到頂端</button>
+
+<script>
+    // 獲取按鈕
+    var mybutton = document.getElementById("topBtn");
+
+    // 當用戶向下滾動 20px 時顯示按鈕
+    window.onscroll = function() {scrollFunction()};
+
+    function scrollFunction() {
+        if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+            mybutton.style.display = "block";
+        } else {
+            mybutton.style.display = "none";
+        }
+    }
+
+    // 當用戶點擊按鈕時，滾動回到頂部
+    function topFunction() {
+        document.body.scrollTop = 0; // For Safari
+        document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+    }
+</script>
+
+</body>
+</html>
